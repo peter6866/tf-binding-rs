@@ -4,7 +4,20 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 
-/// Read a FASTA file and return sequences as a Polars Dataframe
+/// Reads sequences from a FASTA format file and converts them into a Polars DataFrame.
+///
+/// # Arguments
+/// * `filename` - Path to the FASTA file to read
+///
+/// # Returns
+/// * `Result<DataFrame>` - A DataFrame with two columns:
+///   - "label": The sequence identifiers (without '>' prefix)
+///   - "sequence": The corresponding DNA/RNA sequences in uppercase
+///
+/// # Errors
+/// * Returns `MotifError::InvalidFileFormat` if no sequences are found
+/// * Returns `MotifError::DataError` if DataFrame creation fails
+/// * Returns `std::io::Error` for file reading issues
 pub fn read_fasta(filename: &str) -> Result<DataFrame> {
     let mut sequences: Vec<(String, String)> = Vec::new();
     let file = File::open(filename)?;
@@ -46,7 +59,18 @@ pub fn read_fasta(filename: &str) -> Result<DataFrame> {
     Ok(df)
 }
 
-/// Write sequences from a Polars DataFrame to a FASTA file
+/// Writes sequences from a Polars DataFrame to a FASTA format file.
+///
+/// # Arguments
+/// * `df` - DataFrame containing sequences with "label" and "sequence" columns
+/// * `filename` - Path where the FASTA file should be written
+///
+/// # Returns
+/// * `Result<()>` - Unit type if successful
+///
+/// # Errors
+/// * Returns `MotifError::DataError` if required columns are missing
+/// * Returns `MotifError::Io` for file writing issues
 pub fn write_fasta(df: &DataFrame, filename: &str) -> Result<()> {
     let labels = df
         .column("label")
@@ -72,13 +96,35 @@ pub fn write_fasta(df: &DataFrame, filename: &str) -> Result<()> {
     Ok(())
 }
 
-/// Take the reverse compliment of a sequence
+/// Generates the reverse complement of a DNA sequence.
+///
+/// # Arguments
+/// * `sequence` - Input DNA sequence string
+///
+/// # Returns
+/// * `String` - The reverse complement sequence where:
+///   - A ↔ T
+///   - C ↔ G
+///
+/// # Panics
+/// * Panics if the input sequence contains characters other than A, T, C, or G
 pub fn rev_comp(sequence: &str) -> String {
     let compliment = HashMap::from([('A', 'T'), ('T', 'A'), ('C', 'G'), ('G', 'C')]);
     sequence.chars().rev().map(|c| compliment[&c]).collect()
 }
 
-/// Calculate the GC content of every sequence in a Polars DataFrame
+/// Calculates the GC content for each sequence in the input DataFrame.
+///
+/// # Arguments
+/// * `df` - DataFrame containing sequences with "label" and "sequence" columns
+///
+/// # Returns
+/// * `Result<DataFrame>` - A DataFrame with:
+///   - Original labels
+///   - "gc_content": Fraction of G and C bases in each sequence
+///
+/// # Errors
+/// * Returns `MotifError::DataError` if required columns are missing or DataFrame creation fails
 pub fn gc_content(df: &DataFrame) -> Result<DataFrame> {
     let sequences = df
         .column("sequence")
@@ -108,7 +154,19 @@ pub fn gc_content(df: &DataFrame) -> Result<DataFrame> {
     Ok(new_df)
 }
 
-/// Generate a boolean mask indicating which sequences contain restriction sites
+/// Identifies sequences containing specified restriction sites.
+///
+/// # Arguments
+/// * `df` - DataFrame containing sequences with "label" and "sequence" columns
+/// * `restrictions` - Slice of restriction site patterns to search for
+///
+/// # Returns
+/// * `Result<DataFrame>` - A DataFrame with:
+///   - Original labels
+///   - "has_restriction_sites": Boolean indicating if any restriction site was found
+///
+/// # Errors
+/// * Returns `MotifError::DataError` if required columns are missing or DataFrame creation fails
 pub fn has_restriction_sites(df: &DataFrame, restrictions: &[&str]) -> Result<DataFrame> {
     let restrictions_set: HashSet<String> = restrictions.iter().map(|r| r.to_string()).collect();
 
