@@ -1,4 +1,4 @@
-# tf-binding-rs
+# tf-binding-rs (In Development)
 
 A Rust library for predicting transcription factor (TF) binding site occupancy in DNA sequences. This toolkit provides efficient implementations for:
 
