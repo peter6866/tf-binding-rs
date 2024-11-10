@@ -1,6 +1,6 @@
-use crate::error::{MotifError, Result};
+use crate::error::MotifError;
 use polars::prelude::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 
@@ -18,7 +18,7 @@ use std::io::{BufRead, BufReader, Write};
 /// * Returns `MotifError::InvalidFileFormat` if no sequences are found
 /// * Returns `MotifError::DataError` if DataFrame creation fails
 /// * Returns `std::io::Error` for file reading issues
-pub fn read_fasta(filename: &str) -> Result<DataFrame> {
+pub fn read_fasta(filename: &str) -> Result<DataFrame, MotifError> {
     let mut sequences: Vec<(String, String)> = Vec::new();
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
@@ -46,7 +46,9 @@ pub fn read_fasta(filename: &str) -> Result<DataFrame> {
     }
 
     if sequences.is_empty() {
-        return Err(MotifError::InvalidFileFormat("No sequences found".into()));
+        return Err(MotifError::InvalidFileFormat(
+            "No sequences found".to_string(),
+        ));
     }
 
     let (labels, sequences): (Vec<String>, Vec<String>) = sequences.into_iter().unzip();
@@ -54,7 +56,7 @@ pub fn read_fasta(filename: &str) -> Result<DataFrame> {
         Column::new("label".into(), labels),
         Column::new("sequence".into(), sequences),
     ])
-    .map_err(|_| MotifError::DataError("Failed to create DataFrame".into()))?;
+    .map_err(|e| MotifError::DataError(e.to_string()))?;
 
     Ok(df)
 }
@@ -71,7 +73,7 @@ pub fn read_fasta(filename: &str) -> Result<DataFrame> {
 /// # Errors
 /// * Returns `MotifError::DataError` if required columns are missing
 /// * Returns `MotifError::Io` for file writing issues
-pub fn write_fasta(df: &DataFrame, filename: &str) -> Result<()> {
+pub fn write_fasta(df: &DataFrame, filename: &str) -> Result<(), MotifError> {
     let labels = df
         .column("label")
         .map_err(|e| MotifError::DataError(e.to_string()))?
@@ -102,15 +104,29 @@ pub fn write_fasta(df: &DataFrame, filename: &str) -> Result<()> {
 /// * `sequence` - Input DNA sequence string
 ///
 /// # Returns
-/// * `String` - The reverse complement sequence where:
+/// * `Result<String>` - The reverse complement sequence where:
 ///   - A ↔ T
 ///   - C ↔ G
 ///
-/// # Panics
-/// * Panics if the input sequence contains characters other than A, T, C, or G
-pub fn rev_comp(sequence: &str) -> String {
-    let compliment = HashMap::from([('A', 'T'), ('T', 'A'), ('C', 'G'), ('G', 'C')]);
-    sequence.chars().rev().map(|c| compliment[&c]).collect()
+/// # Errors
+/// * Returns `MotifError::InvalidInput` if sequence contains invalid nucleotides
+pub fn reverse_complement(sequence: &str) -> Result<String, MotifError> {
+    static COMPLEMENT: phf::Map<char, char> = phf::phf_map! {
+        'A' => 'T',
+        'T' => 'A',
+        'C' => 'G',
+        'G' => 'C',
+    };
+
+    sequence
+        .chars()
+        .rev()
+        .map(|c| {
+            COMPLEMENT
+                .get(&c)
+                .ok_or_else(|| MotifError::InvalidInput(format!("Invalid nucleotide: {}", c)))
+        })
+        .collect()
 }
 
 /// Calculates the GC content for each sequence in the input DataFrame.
@@ -125,7 +141,7 @@ pub fn rev_comp(sequence: &str) -> String {
 ///
 /// # Errors
 /// * Returns `MotifError::DataError` if required columns are missing or DataFrame creation fails
-pub fn gc_content(df: &DataFrame) -> Result<DataFrame> {
+pub fn gc_content(df: &DataFrame) -> Result<DataFrame, MotifError> {
     let sequences = df
         .column("sequence")
         .map_err(|e| MotifError::DataError(e.to_string()))?
@@ -167,7 +183,10 @@ pub fn gc_content(df: &DataFrame) -> Result<DataFrame> {
 ///
 /// # Errors
 /// * Returns `MotifError::DataError` if required columns are missing or DataFrame creation fails
-pub fn has_restriction_sites(df: &DataFrame, restrictions: &[&str]) -> Result<DataFrame> {
+pub fn has_restriction_sites(
+    df: &DataFrame,
+    restrictions: &[&str],
+) -> Result<DataFrame, MotifError> {
     let restrictions_set: HashSet<String> = restrictions.iter().map(|r| r.to_string()).collect();
 
     let sequences = df

@@ -31,3 +31,22 @@ fn test_write_fasta() {
     // clean up
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn test_reverse_complement() {
+    // Test basic reverse complement
+    let sequence = "ATCG";
+    assert_eq!(fasta::reverse_complement(sequence).unwrap(), "CGAT");
+
+    // Test longer sequence
+    let sequence = "AATTCCGG";
+    assert_eq!(fasta::reverse_complement(sequence).unwrap(), "CCGGAATT");
+
+    // Test palindromic sequence
+    let sequence = "GCGC";
+    assert_eq!(fasta::reverse_complement(sequence).unwrap(), "GCGC");
+
+    // Test error case with invalid nucleotide
+    let sequence = "ATCGX";
+    assert!(fasta::reverse_complement(sequence).is_err());
+}

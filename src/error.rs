@@ -24,10 +24,13 @@ pub enum MotifError {
         value: String,
         message: String,
     },
+
+    #[error("Invalid input: {0}")]
+    InvalidInput(String),
 }
 
-// Type alias for Result with MotifError
-pub type Result<T> = std::result::Result<T, MotifError>;
+// // Type alias for Result with MotifError
+// pub type Result<T> = std::result::Result<T, MotifError>;
 
 impl MotifError {
     /// Create a new InvalidSequence error
