@@ -106,10 +106,10 @@ where
 /// * `MotifError::DataError` - If there are issues creating the PWM DataFrame
 ///
 /// # Example
-/// ```no_run
-/// use your_crate::occupancy::read_pwm_files;
+/// ```ignore
+/// use tf_binding_rs::occupancy::read_pwm_files;
 ///
-/// let pwms = read_pwm_files("path/to/motifs.meme")?;
+/// let pwms = read_pwm_files("path/to/motifs.meme").unwrap();
 /// for (motif_id, pwm) in pwms {
 ///     println!("Found motif: {}", motif_id);
 /// }
