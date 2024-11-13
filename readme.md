@@ -20,9 +20,69 @@ Built with performance in mind, this library offers a fast and memory-efficient 
 - 📈 Occupancy landscape calculation
 - 🧮 Statistical and thermodynamic calculations
 
+## Installation
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+tf-binding-rs = "0.1.1"
+```
+
+Or install using cargo:
+
+```bash
+cargo add tf-binding-rs
+```
+
+## Examples
+
+### Reading FASTA Files
+
+```rust
+use tf_binding_rs::fasta;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Read sequences from a FASTA file
+    let sequences = fasta::read_fasta("path/to/sequences.fasta")?;
+
+    // Print sequence information
+    println!("Number of sequences: {}", sequences.height());
+
+    // Calculate GC content
+    let gc_stats = fasta::gc_content(&sequences)?;
+    println!("GC content analysis: {:?}", gc_stats);
+
+    Ok(())
+}
+```
+
+### Working with PWM Files
+
+```rust
+use tf_binding_rs::occupancy;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Read PWM motifs from MEME format file
+    let pwm_collection = occupancy::read_pwm_files("path/to/motifs.meme")?;
+
+    // Process each motif
+    for (motif_id, pwm) in pwm_collection {
+        println!("Processing motif: {}", motif_id);
+        println!("Matrix dimensions: {:?}", pwm.shape());
+    }
+
+    Ok(())
+}
+```
+
 ## Use Cases
 
 - Genomic sequence analysis
 - TF binding site prediction
 - Regulatory sequence characterization
 - High-throughput DNA sequence processing
+
+## Documentation
+
+For detailed API documentation, visit [docs.rs/tf-binding-rs](https://docs.rs/tf-binding-rs)
