@@ -8,4 +8,4 @@ license = "MIT"
 
 [dependencies]
 tf-binding-rs = { path = "../tf-binding-rs" }
-clap = { version = "4.5.21", features = ["derive"] }
+clap = { version = "4.5.21", features = ["derive", "color"] }

@@ -1,0 +1,27 @@
+name: TF Binding Rust
+
+on:
+  push:
+    branches: ['master']
+    paths:
+      - 'tf-binding-rs/src/**'
+      - 'tf-binding-rs/tests/**'
+  pull_request:
+    branches: ['master']
+    paths:
+      - 'tf-binding-rs/src/**'
+      - 'tf-binding-rs/tests/**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build -p tf-binding-rs --verbose
+      - name: Run tests
+        run: cargo test -p tf-binding-rs --verbose

@@ -1,16 +1,16 @@
-name: Rust
+name: Motif Scanner Rust
 
 on:
   push:
     branches: ['master']
     paths:
-      - 'tf-binding-rs/**'
-      - 'motif-scanner/**'
+      - 'motif-scanner/src/**'
+      - 'motif-scanner/tests/**'
   pull_request:
     branches: ['master']
     paths:
-      - 'tf-binding-rs/**'
-      - 'motif-scanner/**'
+      - 'motif-scanner/src/**'
+      - 'motif-scanner/tests/**'
 
 env:
   CARGO_TERM_COLOR: always
@@ -22,6 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: cargo build --workspace --verbose
+        run: cargo build -p motif-scanner --verbose
       - name: Run tests
-        run: cargo test --workspace --verbose
+        run: cargo test -p motif-scanner --verbose
