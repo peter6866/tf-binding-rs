@@ -7,18 +7,17 @@ A Rust library for predicting transcription factor (TF) binding site occupancy i
 
 - FASTA file manipulation and sequence processing
 - Position Weight Matrix (PWM) handling and Energy Weight Matrix (EWM) conversion
-- TF binding site occupancy prediction using biophysical models
-- Information content and binding site diversity calculations
-
-Built with performance in mind, this library offers a fast and memory-efficient alternative to traditional Python implementations for genomic analysis.
+- TF binding site occupancy prediction using statistical thermodynamics
+- Binding energy landscape and occupancy probability calculations
+- Multi-TF occupancy analysis
 
 ## Features
 
 - 🧬 Fast FASTA file reading and writing
-- 📊 PWM/EWM-based binding site scoring
-- 🔍 Efficient sequence scanning for binding sites
-- 📈 Occupancy landscape calculation
-- 🧮 Statistical and thermodynamic calculations
+- 📊 PWM/EWM-based binding site analysis
+- 🔍 Efficient sequence scanning with energy matrices
+- 📈 Occupancy landscape calculation for multiple TFs
+- 🧮 Statistical thermodynamics-based predictions
 
 ## Installation
 
@@ -76,12 +75,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### Working with PWMs and Energy Matrices
+
+```rust
+use tf_binding_rs::occupancy;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Read PWMs and convert to Energy Weight Matrices
+    let ewm_collection = occupancy::read_pwm_to_ewm("path/to/motifs.meme")?;
+
+    // Calculate binding landscape for a sequence
+    let sequence = "ATCGATCGTAGCTACGT";
+    let mu = -3.0; // chemical potential
+
+    // Get occupancy predictions for all TFs
+    let occupancy_landscape = occupancy::total_landscape(
+        &sequence,
+        &ewm_collection,
+        mu
+    )?;
+
+    println!("Occupancy predictions:\n{}", occupancy_landscape);
+    Ok(())
+}
+```
+
 ## Use Cases
 
 - Genomic sequence analysis
-- TF binding site prediction
+- TF binding site prediction and quantification
+- Multi-factor binding landscape analysis
 - Regulatory sequence characterization
-- High-throughput DNA sequence processing
+- Statistical thermodynamics of protein-DNA interactions
 
 ## Documentation
 
