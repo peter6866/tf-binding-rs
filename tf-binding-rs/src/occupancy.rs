@@ -4,7 +4,6 @@ use crate::types::*;
 use polars::lazy::dsl::*;
 use polars::prelude::*;
 use std::collections::HashMap;
-use std::fmt::format;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::iter::Peekable;
