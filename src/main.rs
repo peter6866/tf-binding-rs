@@ -2,8 +2,9 @@
 use tf_binding_rs::occupancy;
 
 fn main() {
-    let df = occupancy::read_pwm_to_ewm("tests/data/tdmMotifs.meme").unwrap();
-
-    let pwm1 = df.get("NRL_HUMAN.MA0842.1").unwrap();
-    println!("{:?}", pwm1);
+    // let df = occupancy::
+    let seq = "GAGCCGGGTCATGAAAAAGGGGATCTTGTGTGTCTGTCCACGATAAGCACTATCACAAGGACTTTCTATAAACTCACAAGAAATTTCTGCCCACCCAGCACACAGTTTGTCCAGCTCATCCTGTAGGTGTCTCTATAATAGGACCTATCATAAAAAATTCCTCAAGACTGCAGCATTTCAGATAAGCCACCCTCACAAGA";
+    let ewms = occupancy::read_pwm_to_ewm("tests/data/tdmMotifs.meme").unwrap();
+    let landscape = occupancy::total_landscape(seq, &ewms, 8.0).unwrap();
+    println!("{:?}", landscape);
 }
