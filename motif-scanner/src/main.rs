@@ -1,4 +1,27 @@
 use clap::Parser;
+use polars::prelude::*;
+use std::fs;
+use std::path::Path;
+use tf_binding_rs::occupancy::{read_pwm_to_ewm, total_landscape};
+use tf_binding_rs::types::EWMCollection;
+
+#[derive(thiserror::Error, Debug)]
+pub enum ScannerError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("Polars error: {0}")]
+    Polars(#[from] PolarsError),
+
+    #[error("Invalid motif name format")]
+    InvalidMotifFormat,
+
+    #[error("Missing sequence column in input file")]
+    MissingSequenceColumn,
+
+    #[error("PWM processing error: {0}")]
+    PwmError(String),
+}
 
 #[derive(Parser)]
 #[command(
@@ -43,7 +66,108 @@ struct Args {
     mu: i32,
 }
 
-fn main() {
+fn process_sequences(
+    df: &DataFrame,
+    ewm: &EWMCollection,
+    mu: f64,
+    cutoff: f64,
+) -> Result<DataFrame, ScannerError> {
+    let sequences = df
+        .column("sequence")
+        .map_err(|_| ScannerError::MissingSequenceColumn)?;
+
+    let mut labels: Vec<i32> = Vec::new();
+    let mut positions: Vec<i32> = Vec::new();
+    let mut motifs: Vec<String> = Vec::new();
+    let mut strands: Vec<String> = Vec::new();
+    let mut lengths: Vec<i32> = Vec::new();
+    let mut occupancies: Vec<f64> = Vec::new();
+
+    let total_seqs = sequences.len();
+    println!("{} sequences to scan", total_seqs);
+
+    for (idx, seq) in sequences.str()?.into_iter().enumerate() {
+        if let Some(sequence) = seq {
+            let landscape = total_landscape(sequence, ewm, mu).map_err(|_| {
+                ScannerError::PwmError(format!(
+                    "Error calculating occupancy landscape for sequence {}",
+                    idx
+                ))
+            })?;
+
+            // Get the height (number of positions) of the landscape DataFrame
+            let n_positions = landscape.height();
+
+            // Iterate through each motif in the EWM collection
+            for (motif_id, motif_df) in ewm.iter() {
+                // Check both forward and reverse strands
+                for strand in ["F", "R"] {
+                    let col_name = format!("{}_{}", motif_id, strand);
+
+                    // Get the column for this motif+strand from the landscape
+                    if let Ok(motif_col) = landscape.column(&col_name) {
+                        // Iterate through positions
+                        for pos in 0..n_positions {
+                            if let Ok(occ) = motif_col.get(pos).unwrap().try_extract::<f64>() {
+                                if occ > cutoff {
+                                    labels.push(idx as i32);
+                                    positions.push(pos as i32);
+                                    motifs.push(motif_id.split('_').next().unwrap().to_string());
+                                    strands.push(strand.to_string());
+                                    lengths.push(motif_df.height() as i32);
+                                    occupancies.push(occ);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (idx + 1) % 5000 == 0 {
+            println!("\t{} / {} sequences scanned", idx + 1, total_seqs);
+        }
+    }
+
+    let df = DataFrame::new(vec![
+        Column::new("label".into(), labels),
+        Column::new("position".into(), positions),
+        Column::new("motif".into(), motifs),
+        Column::new("strand".into(), strands),
+        Column::new("length".into(), lengths),
+        Column::new("occupancy".into(), occupancies),
+    ])?;
+
+    Ok(df)
+}
+
+fn main() -> Result<(), ScannerError> {
+    let start_time = std::time::Instant::now();
+
     let args = Args::parse();
-    println!("{:?}", args);
+
+    // Create output directory if it doesn't exist
+    if let Some(parent) = Path::new(&args.output_file).parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let df = LazyCsvReader::new(&args.data_file)
+        .with_has_header(true)
+        .finish()?
+        .filter(col("sequence").str().contains(lit("N"), false).not())
+        .filter(col("sequence").str().contains(lit("Y"), false).not())
+        .collect()?;
+
+    // read pwm file and convert to ewm
+    let ewm = read_pwm_to_ewm(&args.pwm_file).map_err(|e| ScannerError::PwmError(e.to_string()))?;
+
+    let results_df = process_sequences(&df, &ewm, args.mu as f64, args.cutoff)?;
+
+    let elapsed = start_time.elapsed();
+    println!(
+        "Total execution time: {:.4} minutes",
+        elapsed.as_secs_f64() / 60.0
+    );
+
+    Ok(())
 }
