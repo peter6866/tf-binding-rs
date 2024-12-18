@@ -8,6 +8,7 @@ license = "MIT"
 
 [dependencies]
 tf-binding-rs = { path = "../tf-binding-rs" }
-clap = { version = "4.5.21", features = ["derive", "color"] }
-polars = { version = "0.44.2", features = ["lazy", "csv", "strings", "regex"] }
-thiserror = "2.0.3"
+clap = { version = "4.5.23", features = ["derive", "color"] }
+polars = { version = "0.45.1", features = ["lazy", "csv", "strings", "regex", "parquet"] }
+thiserror = "2.0.8"
+rayon = "1.5.1"

@@ -127,7 +127,7 @@ pub fn read_pwm_files(filename: &str) -> Result<PWMCollection, MotifError> {
     let file = File::open(filename)?;
     let reader = BufReader::new(file);
     let mut lines = reader.lines().peekable();
-    let mut pwms = HashMap::new();
+    let mut pwms = PWMCollection::new();
 
     // Skip header until first MOTIF
     skip_until_motif(&mut lines);
