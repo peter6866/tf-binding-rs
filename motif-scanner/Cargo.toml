@@ -7,7 +7,7 @@ authors = ["Jiayu Huang <hjiayu@wustl.edu>"]
 license = "MIT"
 
 [dependencies]
-tf-binding-rs = { path = "../tf-binding-rs" }
+tf-binding-rs = { version = "0.1.4", path = "../tf-binding-rs" }
 clap = { version = "4.5.23", features = ["derive", "color"] }
 polars = { version = "0.45.1", features = ["lazy", "csv", "strings", "regex", "parquet"] }
 thiserror = "2.0.8"
