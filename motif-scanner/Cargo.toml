@@ -1,6 +1,6 @@
 [package]
 name = "motif-scanner"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Command line tool for scanning DNA sequences for transcription factor binding sites"
 authors = ["Jiayu Huang <hjiayu@wustl.edu>"]

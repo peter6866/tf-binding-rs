@@ -126,16 +126,16 @@ fn process_sequences(
                 let n_positions = landscape.height();
                 let mut local_results = Vec::new();
 
-                // Iterate through each motif in the EWM collection
-                for (motif_id, motif_df) in ewm.iter() {
-                    // Check both forward and reverse strands
-                    for strand in ["F", "R"] {
-                        let col_name = format!("{}_{}", motif_id, strand);
+                // Iterate through each position in the landscape
+                for pos in 0..n_positions {
+                    // Iterate through each motif in the EWM collection
+                    for (motif_id, motif_df) in ewm.iter() {
+                        // Check both forward and reverse strands
+                        for strand in ["F", "R"] {
+                            let col_name = format!("{}_{}", motif_id, strand);
 
-                        // Get the column for this motif+strand from the landscape
-                        if let Ok(motif_col) = landscape.column(&col_name) {
-                            // Iterate through positions
-                            for pos in 0..n_positions {
+                            // Get the column for this motif+strand from the landscape
+                            if let Ok(motif_col) = landscape.column(&col_name) {
                                 if let Ok(occ) = motif_col.get(pos).unwrap().try_extract::<f64>() {
                                     if occ > cutoff {
                                         local_results.push((
